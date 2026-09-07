@@ -20,8 +20,8 @@ export function EmptyState({
   action,
 }: {
   title: string;
-  description?: string;
-  action?: ReactNode;
+  description?: string | undefined;
+  action?: ReactNode | undefined;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
@@ -62,9 +62,9 @@ export function QueryBoundary({
 }: {
   isLoading: boolean;
   error: unknown;
-  isEmpty?: boolean;
-  onRetry?: () => void;
-  empty?: ReactNode;
+  isEmpty?: boolean | undefined;
+  onRetry?: (() => void) | undefined;
+  empty?: ReactNode | undefined;
   children: ReactNode;
 }) {
   if (isLoading) return <LoadingRows />;
