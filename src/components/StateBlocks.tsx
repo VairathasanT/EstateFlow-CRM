@@ -35,7 +35,7 @@ export function EmptyState({
   );
 }
 
-export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: (() => void) | undefined }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
       <div className="rounded-full bg-destructive/10 p-3 text-destructive">
