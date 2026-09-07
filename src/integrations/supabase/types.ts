@@ -14,16 +14,342 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          amount: number
+          booked_by: string | null
+          booking_date: string
+          created_at: string
+          id: string
+          lead_id: string
+          notes: string
+          status: Database["public"]["Enums"]["booking_status"]
+          unit_id: string
+        }
+        Insert: {
+          amount: number
+          booked_by?: string | null
+          booking_date?: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          notes?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          unit_id: string
+        }
+        Update: {
+          amount?: number
+          booked_by?: string | null
+          booking_date?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          notes?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buildings: {
+        Row: {
+          created_at: string
+          floors: number
+          id: string
+          name: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          floors?: number
+          id?: string
+          name: string
+          project_id: string
+        }
+        Update: {
+          created_at?: string
+          floors?: number
+          id?: string
+          name?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buildings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_notes: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          lead_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          lead_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          assigned_to: string | null
+          budget: number | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          follow_up_date: string | null
+          id: string
+          name: string
+          phone: string
+          source: string
+          stage: Database["public"]["Enums"]["lead_stage"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          budget?: number | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          follow_up_date?: string | null
+          id?: string
+          name: string
+          phone: string
+          source?: string
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          budget?: number | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          follow_up_date?: string | null
+          id?: string
+          name?: string
+          phone?: string
+          source?: string
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          location: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          location?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          location?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      units: {
+        Row: {
+          area_sqft: number
+          building_id: string
+          created_at: string
+          id: string
+          price: number
+          status: Database["public"]["Enums"]["unit_status"]
+          unit_number: string
+          unit_type: string
+        }
+        Insert: {
+          area_sqft?: number
+          building_id: string
+          created_at?: string
+          id?: string
+          price: number
+          status?: Database["public"]["Enums"]["unit_status"]
+          unit_number: string
+          unit_type?: string
+        }
+        Update: {
+          area_sqft?: number
+          building_id?: string
+          created_at?: string
+          id?: string
+          price?: number
+          status?: Database["public"]["Enums"]["unit_status"]
+          unit_number?: string
+          unit_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cancel_booking: {
+        Args: { p_booking_id: string }
+        Returns: {
+          amount: number
+          booked_by: string | null
+          booking_date: string
+          created_at: string
+          id: string
+          lead_id: string
+          notes: string
+          status: Database["public"]["Enums"]["booking_status"]
+          unit_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_booking: {
+        Args: {
+          p_amount?: number
+          p_booking_date?: string
+          p_lead_id: string
+          p_notes?: string
+          p_unit_id: string
+        }
+        Returns: {
+          amount: number
+          booked_by: string | null
+          booking_date: string
+          created_at: string
+          id: string
+          lead_id: string
+          notes: string
+          status: Database["public"]["Enums"]["booking_status"]
+          unit_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "sales"
+      booking_status: "active" | "cancelled"
+      lead_stage:
+        | "new"
+        | "contacted"
+        | "site_visit"
+        | "interested"
+        | "negotiation"
+        | "booked"
+        | "lost"
+      unit_status: "available" | "held" | "booked" | "sold"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +476,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "sales"],
+      booking_status: ["active", "cancelled"],
+      lead_stage: [
+        "new",
+        "contacted",
+        "site_visit",
+        "interested",
+        "negotiation",
+        "booked",
+        "lost",
+      ],
+      unit_status: ["available", "held", "booked", "sold"],
+    },
   },
 } as const
