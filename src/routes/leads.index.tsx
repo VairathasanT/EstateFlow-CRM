@@ -38,8 +38,8 @@ type LeadSearch = { stage?: LeadStage | undefined; q?: string | undefined };
 
 export const Route = createFileRoute("/leads/")({
   validateSearch: (search: Record<string, unknown>): LeadSearch => ({
-    stage: LEAD_STAGES.includes(search.stage as LeadStage) ? (search.stage as LeadStage) : undefined,
-    q: typeof search.q === "string" && search.q ? search.q : undefined,
+    stage: LEAD_STAGES.includes(search["stage"] as LeadStage) ? (search["stage"] as LeadStage) : undefined,
+    q: typeof search["q"] === "string" && search["q"] ? (search["q"] as string) : undefined,
   }),
   head: () => ({
     meta: [
