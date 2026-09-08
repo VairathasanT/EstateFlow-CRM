@@ -220,7 +220,7 @@ function NewLeadDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v
       const { error: err } = await supabase.from("leads").insert({
         name: form.name.trim(),
         email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
+        phone: form.phone.trim(),
         source: form.source,
         budget: form.budget ? Number(form.budget) : null,
         stage: form.stage,
