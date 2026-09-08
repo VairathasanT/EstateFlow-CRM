@@ -250,7 +250,7 @@ function BookUnitDialog({ unit, onClose }: { unit: UnitRow | null; onClose: () =
         p_unit_id: unit.id,
         p_amount: value,
         p_booking_date: date,
-        p_notes: notes.trim() || undefined,
+        ...(notes.trim() ? { p_notes: notes.trim() } : {}),
       });
       if (err) throw err;
     },
@@ -345,7 +345,7 @@ function AddUnitDialog({
         building_id: form.building_id,
         unit_number: form.unit_number.trim(),
         unit_type: form.unit_type,
-        area_sqft: form.area ? Number(form.area) : undefined,
+        ...(form.area ? { area_sqft: Number(form.area) } : {}),
         price: Number(form.price),
         status: "available",
       });
