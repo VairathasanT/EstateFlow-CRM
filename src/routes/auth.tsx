@@ -7,7 +7,6 @@ import { friendlyError } from "@/lib/crm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/auth")({
@@ -27,50 +26,68 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const { session, loading } = useSession();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   useEffect(() => {
     if (!loading && session) navigate({ to: "/dashboard", replace: true });
   }, [loading, session, navigate]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
-      <div className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10 font-sans">
+      <div className="w-full max-w-[420px]">
         <div className="mb-6 flex items-center justify-center gap-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Building2 className="h-5 w-5" />
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+            <Building2 className="h-6 w-6" />
           </span>
-          <span className="font-display text-xl font-semibold">Estate CRM</span>
+          <span className="font-display text-xl font-bold tracking-tight">Estate CRM</span>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome back</CardTitle>
-            <CardDescription>Sign in to manage your leads, properties and bookings.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="signin">
-              <TabsList className="mb-4 grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign in</TabsTrigger>
-                <TabsTrigger value="signup">Create account</TabsTrigger>
-              </TabsList>
-              <TabsContent value="signin">
-                <AuthForm mode="signin" />
-              </TabsContent>
-              <TabsContent value="signup">
-                <AuthForm mode="signup" />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+
+        <div className="rounded-2xl border border-border bg-card shadow-[0_20px_50px_oklch(0.2_0.03_220_/_0.06)] p-8 sm:p-10">
+          <div className="mb-8 text-center">
+            <h1 className="font-display text-2xl font-bold text-card-foreground">Welcome back</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Please enter your details to sign in.</p>
+          </div>
+
+          <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")}>
+            <TabsList className="mb-8 grid h-auto w-full grid-cols-2 gap-0 rounded-xl bg-muted p-1">
+              <TabsTrigger
+                value="signin"
+                className="rounded-lg text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-foreground/5"
+              >
+                Sign in
+              </TabsTrigger>
+              <TabsTrigger
+                value="signup"
+                className="rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:bg-card data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-foreground/5"
+              >
+                Create account
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="signin">
+              <AuthForm mode="signin" onModeChange={setMode} />
+            </TabsContent>
+            <TabsContent value="signup">
+              <AuthForm mode="signup" onModeChange={setMode} />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
 }
 
-function AuthForm({ mode }: { mode: "signin" | "signup" }) {
+function AuthForm({
+  mode,
+  onModeChange,
+}: {
+  mode: "signin" | "signup";
+  onModeChange: (mode: "signin" | "signup") => void;
+}) {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -108,6 +125,9 @@ function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         });
         if (err) throw err;
         setNotice("Account created. You can sign in now.");
+        setFullName("");
+        setEmail("");
+        setPassword("");
       }
     } catch (err) {
       setError(friendlyError(err));
@@ -117,45 +137,104 @@ function AuthForm({ mode }: { mode: "signin" | "signup" }) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-6">
       {mode === "signup" ? (
         <div className="space-y-2">
-          <Label htmlFor={`${mode}-name`}>Full name</Label>
+          <Label htmlFor={`${mode}-name`} className="text-sm font-medium text-foreground/80">
+            Full name
+          </Label>
           <Input
             id={`${mode}-name`}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Priya Sharma"
             autoComplete="name"
+            className="rounded-xl border-input bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-4 focus:ring-ring/10"
           />
         </div>
       ) : null}
+
       <div className="space-y-2">
-        <Label htmlFor={`${mode}-email`}>Email</Label>
+        <Label htmlFor={`${mode}-email`} className="text-sm font-medium text-foreground/80">
+          Email address
+        </Label>
         <Input
           id={`${mode}-email`}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@company.com"
+          placeholder="name@company.com"
           autoComplete="email"
+          className="rounded-xl border-input bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-4 focus:ring-ring/10"
         />
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor={`${mode}-password`}>Password</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor={`${mode}-password`} className="text-sm font-medium text-foreground/80">
+            Password
+          </Label>
+          {mode === "signin" ? (
+            <button
+              type="button"
+              onClick={() => setNotice("Please contact your admin to reset your password.")}
+              className="text-xs font-semibold text-primary hover:text-primary/80"
+            >
+              Forgot password?
+            </button>
+          ) : null}
+        </div>
         <Input
           id={`${mode}-password`}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
           autoComplete={mode === "signin" ? "current-password" : "new-password"}
+          className="rounded-xl border-input bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-4 focus:ring-ring/10"
         />
       </div>
+
+      {mode === "signin" ? (
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="remember_me"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="h-4 w-4 rounded border-input text-primary accent-primary focus:ring-ring"
+          />
+          <label htmlFor="remember_me" className="ml-2 block text-sm text-muted-foreground">
+            Remember for 30 days
+          </label>
+        </div>
+      ) : null}
+
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {notice ? <p className="text-sm text-success">{notice}</p> : null}
-      <Button type="submit" className="w-full" disabled={busy}>
+
+      <Button
+        type="submit"
+        disabled={busy}
+        className="w-full rounded-xl bg-primary py-3.5 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-[0.98] hover:bg-primary/90"
+      >
         {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
       </Button>
+
+      <p className="text-center text-sm text-muted-foreground">
+        {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}
+        <button
+          type="button"
+          onClick={() => {
+            setError(null);
+            setNotice(null);
+            onModeChange(mode === "signin" ? "signup" : "signin");
+          }}
+          className="font-semibold text-primary hover:text-primary/80"
+        >
+          {mode === "signin" ? "Sign up" : "Sign in"}
+        </button>
+      </p>
     </form>
   );
 }
