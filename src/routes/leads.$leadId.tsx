@@ -152,7 +152,7 @@ function LeadDetail() {
                   <Field label="Stage">
                     <Select
                       value={l.stage}
-                      onValueChange={(v) => update.mutate({ stage: v })}
+                      onValueChange={(v) => update.mutate({ stage: v as LeadStage })}
                       disabled={l.stage === "booked"}
                     >
                       <SelectTrigger>
