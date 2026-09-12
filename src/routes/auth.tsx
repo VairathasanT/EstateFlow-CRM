@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Building2 } from "lucide-react";
+import { Building2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
 import { friendlyError } from "@/lib/crm";
@@ -88,6 +88,7 @@ function AuthForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -184,15 +185,26 @@ function AuthForm({
             </button>
           ) : null}
         </div>
-        <Input
-          id={`${mode}-password`}
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-          autoComplete={mode === "signin" ? "current-password" : "new-password"}
-          className="rounded-xl border-input bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-4 focus:ring-ring/10"
-        />
+        <div className="relative">
+          <Input
+            id={`${mode}-password`}
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            className="rounded-xl border-input bg-card px-4 py-3 pr-11 text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-4 focus:ring-ring/10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-pressed={showPassword}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {mode === "signin" ? (

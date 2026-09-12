@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
@@ -16,6 +16,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  LEAD_SOURCES,
   LEAD_STAGES,
   SOURCE_LABEL,
   STAGE_LABEL,
@@ -89,6 +98,7 @@ function LeadDetail() {
   });
 
   const [note, setNote] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
 
   const update = useMutation({
     mutationFn: async (patch: {
@@ -138,9 +148,14 @@ function LeadDetail() {
               title={l.name}
               description={`${l.phone ?? "—"} · ${l.email ?? "—"} · ${SOURCE_LABEL[l.source ?? ""] ?? "—"}`}
               action={
-                <Badge variant="secondary" className={STAGE_TONE[l.stage as LeadStage]}>
-                  {STAGE_LABEL[l.stage as LeadStage]}
-                </Badge>
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary" className={STAGE_TONE[l.stage as LeadStage]}>
+                    {STAGE_LABEL[l.stage as LeadStage]}
+                  </Badge>
+                  <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                    <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit details
+                  </Button>
+                </div>
               }
             />
             <div className="grid gap-4 lg:grid-cols-3">
@@ -277,9 +292,111 @@ function LeadDetail() {
                 </CardContent>
               </Card>
             </div>
+            <EditLeadDialog
+              open={editOpen}
+              onOpenChange={setEditOpen}
+              lead={{
+                id: l.id,
+                name: l.name,
+                email: l.email ?? "",
+                phone: l.phone ?? "",
+                source: l.source ?? "website",
+              }}
+            />
           </>
         ) : null}
       </QueryBoundary>
     </>
+  );
+}
+
+function EditLeadDialog({
+  open,
+  onOpenChange,
+  lead,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  lead: { id: string; name: string; email: string; phone: string; source: string };
+}) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState(lead);
+  const [loadedId, setLoadedId] = useState(lead.id);
+  const [error, setError] = useState<string | null>(null);
+
+  if (lead.id !== loadedId) {
+    setLoadedId(lead.id);
+    setForm(lead);
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (form.name.trim().length < 2) throw new Error("Lead name is required.");
+      if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) throw new Error("Enter a valid email address.");
+      if (!/^[0-9+\-\s]{7,15}$/.test(form.phone.trim())) throw new Error("Enter a valid phone number.");
+      const { error: err } = await supabase
+        .from("leads")
+        .update({
+          name: form.name.trim(),
+          email: form.email.trim() || null,
+          phone: form.phone.trim(),
+          source: form.source,
+        })
+        .eq("id", lead.id);
+      if (err) throw err;
+    },
+    onSuccess: () => {
+      toast.success("Lead details updated");
+      queryClient.invalidateQueries({ queryKey: ["lead", lead.id] });
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      setError(null);
+      onOpenChange(false);
+    },
+    onError: (err) => setError(friendlyError(err)),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit lead details</DialogTitle>
+          <DialogDescription>Correct the contact information captured for this lead.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Field label="Full name">
+            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          </Field>
+          <Field label="Email">
+            <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </Field>
+          <Field label="Phone">
+            <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          </Field>
+          <Field label="Source">
+            <Select value={form.source} onValueChange={(v) => setForm({ ...form, source: v })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LEAD_SOURCES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {SOURCE_LABEL[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? "Saving…" : "Save changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

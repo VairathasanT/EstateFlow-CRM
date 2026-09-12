@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
@@ -67,6 +67,7 @@ function PropertiesPage() {
   const [type, setType] = useState<string>("all");
   const [bookUnit, setBookUnit] = useState<UnitRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [editUnit, setEditUnit] = useState<UnitRow | null>(null);
 
   const inventory = useQuery({
     queryKey: ["inventory"],
@@ -183,11 +184,23 @@ function PropertiesPage() {
                                   {unit.unit_type} · {unit.area_sqft ?? "—"} sq ft
                                 </p>
                                 <p className="mt-1 font-display text-sm font-semibold">{formatMoney(unit.price)}</p>
-                                {unit.status === "available" ? (
-                                  <Button size="sm" variant="outline" className="mt-3 w-full" onClick={() => setBookUnit(unit)}>
-                                    Book this unit
-                                  </Button>
-                                ) : null}
+                                <div className="mt-3 flex gap-2">
+                                  {unit.status === "available" ? (
+                                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setBookUnit(unit)}>
+                                      Book this unit
+                                    </Button>
+                                  ) : null}
+                                  {me?.isAdmin ? (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className={unit.status === "available" ? "" : "flex-1"}
+                                      onClick={() => setEditUnit(unit)}
+                                    >
+                                      <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
+                                    </Button>
+                                  ) : null}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -207,11 +220,14 @@ function PropertiesPage() {
 
       <BookUnitDialog unit={bookUnit} onClose={() => setBookUnit(null)} />
       {me?.isAdmin ? (
-        <AddUnitDialog
-          open={addOpen}
-          onOpenChange={setAddOpen}
-          buildings={inventory.data?.buildings ?? []}
-        />
+        <>
+          <AddUnitDialog
+            open={addOpen}
+            onOpenChange={setAddOpen}
+            buildings={inventory.data?.buildings ?? []}
+          />
+          <EditUnitDialog unit={editUnit} onClose={() => setEditUnit(null)} />
+        </>
       ) : null}
     </>
   );
@@ -413,6 +429,113 @@ function AddUnitDialog({
           </Button>
           <Button onClick={() => add.mutate()} disabled={add.isPending}>
             {add.isPending ? "Saving…" : "Add unit"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditUnitDialog({ unit, onClose }: { unit: UnitRow | null; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({ unit_number: "", unit_type: "2BHK", area: "", price: "", status: "available" as UnitStatus });
+  const [loadedId, setLoadedId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  if (unit && unit.id !== loadedId) {
+    setLoadedId(unit.id);
+    setForm({
+      unit_number: unit.unit_number,
+      unit_type: unit.unit_type,
+      area: unit.area_sqft ? String(unit.area_sqft) : "",
+      price: String(unit.price),
+      status: unit.status,
+    });
+    setError(null);
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!unit) return;
+      if (!form.unit_number.trim()) throw new Error("Unit number is required.");
+      if (!(Number(form.price) > 0)) throw new Error("Price must be greater than zero.");
+      if (unit.status === "booked" && form.status !== "booked")
+        throw new Error("Cancel the booking from the Bookings page before changing this unit's status.");
+      const { error: err } = await supabase
+        .from("units")
+        .update({
+          unit_number: form.unit_number.trim(),
+          unit_type: form.unit_type,
+          area_sqft: form.area ? Number(form.area) : 0,
+          price: Number(form.price),
+          status: form.status,
+        })
+        .eq("id", unit.id);
+      if (err) throw err;
+    },
+    onSuccess: () => {
+      toast.success("Unit updated");
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      setError(null);
+      onClose();
+    },
+    onError: (err) => setError(friendlyError(err)),
+  });
+
+  return (
+    <Dialog open={Boolean(unit)} onOpenChange={(v) => (v ? null : onClose())}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit unit {unit?.unit_number}</DialogTitle>
+          <DialogDescription>Update pricing, size, type or availability.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Field label="Unit number">
+            <Input value={form.unit_number} onChange={(e) => setForm({ ...form, unit_number: e.target.value })} />
+          </Field>
+          <Field label="Unit type">
+            <Select value={form.unit_type} onValueChange={(v) => setForm({ ...form, unit_type: v })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {UNIT_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Area (sq ft)">
+            <Input type="number" min="0" value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} />
+          </Field>
+          <Field label="Price (₹)">
+            <Input type="number" min="1" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+          </Field>
+          <Field label="Status">
+            <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as UnitStatus })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {UNIT_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s} disabled={s === "booked" && unit?.status !== "booked"}>
+                    {UNIT_STATUS_LABEL[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? "Saving…" : "Save changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
