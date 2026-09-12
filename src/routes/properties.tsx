@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
@@ -67,6 +67,7 @@ function PropertiesPage() {
   const [type, setType] = useState<string>("all");
   const [bookUnit, setBookUnit] = useState<UnitRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [editUnit, setEditUnit] = useState<UnitRow | null>(null);
 
   const inventory = useQuery({
     queryKey: ["inventory"],
@@ -183,11 +184,23 @@ function PropertiesPage() {
                                   {unit.unit_type} · {unit.area_sqft ?? "—"} sq ft
                                 </p>
                                 <p className="mt-1 font-display text-sm font-semibold">{formatMoney(unit.price)}</p>
-                                {unit.status === "available" ? (
-                                  <Button size="sm" variant="outline" className="mt-3 w-full" onClick={() => setBookUnit(unit)}>
-                                    Book this unit
-                                  </Button>
-                                ) : null}
+                                <div className="mt-3 flex gap-2">
+                                  {unit.status === "available" ? (
+                                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setBookUnit(unit)}>
+                                      Book this unit
+                                    </Button>
+                                  ) : null}
+                                  {me?.isAdmin ? (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className={unit.status === "available" ? "" : "flex-1"}
+                                      onClick={() => setEditUnit(unit)}
+                                    >
+                                      <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
+                                    </Button>
+                                  ) : null}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -207,11 +220,14 @@ function PropertiesPage() {
 
       <BookUnitDialog unit={bookUnit} onClose={() => setBookUnit(null)} />
       {me?.isAdmin ? (
-        <AddUnitDialog
-          open={addOpen}
-          onOpenChange={setAddOpen}
-          buildings={inventory.data?.buildings ?? []}
-        />
+        <>
+          <AddUnitDialog
+            open={addOpen}
+            onOpenChange={setAddOpen}
+            buildings={inventory.data?.buildings ?? []}
+          />
+          <EditUnitDialog unit={editUnit} onClose={() => setEditUnit(null)} />
+        </>
       ) : null}
     </>
   );
