@@ -9,8 +9,8 @@ A production-style CRM where a real-estate sales team manages leads, property in
 
 | Role           | Email                   | Password       |
 | -------------- | ----------------------- | -------------- |
-| Admin          | admin@estatecrm.com     | `Password123!` |
-| Sales employee | sales@estatecrm.com     | `Password123!` |
+| Admin          | admin@estatecrm.com     | `Admin@123` |
+| Sales employee | sales@estatecrm.com     | `Sales@123` |
 
 Demo data is seeded: 2 projects, 4 buildings, 20 units, 6 leads and a sample booking.
 
